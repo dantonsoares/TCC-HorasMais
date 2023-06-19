@@ -1,6 +1,6 @@
 <?php
 // Conecta ao banco de dados
-$servername = "localhost";
+$servername = "mysql-ag-br1-11.conteige.cloud";
 $username = "watkhf_root";
 $password = "bancodedadostcc";
 $dbname = "watkhf_tcc";
