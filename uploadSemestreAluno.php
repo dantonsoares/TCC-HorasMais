@@ -1,81 +1,117 @@
 <?php
-// Conecta ao banco de dados
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "tcc";
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+session_start();
+
+// Verifica se o usuário está logado
+if (!isset($_SESSION["id"])) {
+    header("Location: index.php");
+    exit();
+}
+
+// Função para gerar a senha usando as duas iniciais do nome e a matrícula
+function gerarSenha($nome, $matricula) {
+    $iniciais = substr($nome, 0, 2);
+    return md5($iniciais . $matricula);
 }
 
 // Verifica se o arquivo CSV foi enviado
-if (isset($_FILES["csvFile"]) && !empty($_FILES["csvFile"]["tmp_name"])) {
-    // Verifica se houve algum erro no upload do arquivo
-    if ($_FILES["csvFile"]["error"] > 0) {
-        $message = "Erro no upload do arquivo: " . $_FILES["csvFile"]["error"];
+if (isset($_FILES["csvFile"]) && $_FILES["csvFile"]["error"] == UPLOAD_ERR_OK) {
+    $semestre = $_POST["semestre"]; // Obtém o semestre informado no formulário
+    $csvFile = $_FILES["csvFile"]["tmp_name"]; // Caminho temporário do arquivo CSV
 
-        // Redireciona para a página de cadastro com a mensagem de erro
-        header("Location: cadastroSemestre.php?message=" . urlencode($message));
-        exit();
-    } else {
-        // Lê o conteúdo do arquivo CSV
-        $file = $_FILES["csvFile"]["tmp_name"];
-        $handle = fopen($file, "r");
+    // Conexão com o banco de dados (substitua pelas suas informações de conexão)
+    $servername = "200.17.76.17";
+    $username = "root";
+    $password = "rootpassword";
+    $dbname = "tcc";
+    $conn = new mysqli($servername, $username, $password, $dbname);
 
-        // Ignorar a primeira linha (cabeçalho)
-        $header = fgetcsv($handle, 1000, ",");
+    // Verifica se a conexão foi estabelecida corretamente
+    if ($conn->connect_error) {
+        die("Falha na conexão com o banco de dados: " . $conn->connect_error);
+    }
 
-        // Prepara a query para inserção dos dados na tabela tb_alunos_semestre
-        $stmt = $conn->prepare("INSERT INTO tb_alunos_semestre (matricula, nome, status, semestre) VALUES (?, ?, ?, ?)");
+    // Prepara a instrução SQL para inserção na tabela "tb_alunos_semestre"
+    $sqlAlunosSemestre = "INSERT INTO tb_alunos_semestre (matricula, nome, semestre) VALUES (?, ?, ?)";
 
-        // Prepara a query para inserção dos dados na tabela tb_login
-        $stmtLogin = $conn->prepare("INSERT INTO tb_login (matricula, senha, IDAluno) VALUES (?, ?, ?)");
+    // Prepara a instrução SQL para inserção na tabela "tb_login"
+    $sqlLogin = "INSERT INTO tb_login (matricula, senha, IDAluno) VALUES (?, ?, ?)";
 
-        while (($data = fgetcsv($handle, 1000, ",")) !== false) {
-            // Extrai as colunas do arquivo CSV
-            $servername = "localhost";
-            $username = "danton_root";
-            $password = "tcchorasmais";
-            $dbname = "danton_tcc";
+    // Prepara as declarações SQL
+    $stmtAlunosSemestre = $conn->prepare($sqlAlunosSemestre);
+    $stmtLogin = $conn->prepare($sqlLogin);
 
-            // Executa a query de inserção na tabela tb_alunos_semestre
-            $stmt->bind_param("ssss", $matricula, $nome, $status, $semestre);
-            $stmt->execute();
+    // Verifica se as declarações SQL foram preparadas corretamente
+    if (!$stmtAlunosSemestre || !$stmtLogin) {
+        die("Erro ao preparar as declarações SQL: " . $conn->error);
+    }
 
-            // Verifica se ocorreu uma inserção bem-sucedida na tabela tb_alunos_semestre
-            if ($stmt->affected_rows > 0) {
-                // Obtém o ID do aluno inserido
-                $idAluno = $stmt->insert_id;
+    // Lê cada linha do arquivo CSV
+    if (($handle = fopen($csvFile, "r")) !== FALSE) {
+        $firstRow = true; // Variável para verificar se é a primeira linha
 
-                // Gera a senha para o aluno (iniciais do nome + matrícula) e criptografa usando MD5
-                $senha = md5(strtoupper(substr($nome, 0, 2)) . $matricula);
+        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            // Ignora a primeira linha (cabeçalho)
+            if ($firstRow) {
+                $firstRow = false;
+                continue;
+            }
 
-                // Executa a query de inserção na tabela tb_login
-                $stmtLogin->bind_param("ssi", $matricula, $senha, $idAluno);
-                $stmtLogin->execute();
+            $matricula = $data[0]; // Obtém a matrícula da coluna 0
+            $nome = $data[1]; // Obtém o nome da coluna 1
+
+            // Gera a senha usando as duas iniciais do nome e a matrícula
+            $senha = gerarSenha($nome, $matricula);
+
+            // Associa as variáveis aos parâmetros da instrução SQL
+            $stmtAlunosSemestre->bind_param("iss", $matricula, $nome, $semestre);
+
+            // Executa a declaração SQL para inserção na tabela "tb_alunos_semestre"
+            $stmtAlunosSemestre->execute();
+
+            // Verifica se a execução foi bem-sucedida
+            if ($stmtAlunosSemestre->errno) {
+                die("Erro ao inserir dados na tabela tb_alunos_semestre: " . $stmtAlunosSemestre->error);
+            }
+
+            // Obtém o ID do aluno inserido
+            $IDAluno = $stmtAlunosSemestre->insert_id;
+
+            // Associa as variáveis aos parâmetros da instrução SQL
+            $stmtLogin->bind_param("isi", $matricula, $senha, $IDAluno);
+
+            // Executa a declaração SQL para inserção na tabela "tb_login"
+            $stmtLogin->execute();
+
+            // Verifica se a execução foi bem-sucedida
+            if ($stmtLogin->errno) {
+                die("Erro ao inserir dados na tabela tb_login: " . $stmtLogin->error);
             }
         }
 
+        // Fecha o arquivo CSV
         fclose($handle);
-
-        // Verifica se ocorreram inserções no banco de dados
-        if ($stmt->affected_rows > 0) {
-            $message = "Alunos cadastrados com sucesso";
-        } else {
-            $message = "Erro ao cadastrar alunos";
-        }
-
-        // Redireciona para a página de cadastro com uma mensagem de sucesso ou erro
+    } else {
+        // Erro ao abrir o arquivo CSV
+        $message = "Erro ao abrir o arquivo CSV.";
         header("Location: cadastroSemestre.php?message=" . urlencode($message));
         exit();
     }
+
+    // Fecha as declarações SQL
+    $stmtAlunosSemestre->close();
+    $stmtLogin->close();
+
+    // Fecha a conexão com o banco de dados
+    $conn->close();
+
+    // Redireciona para a página de upload com uma mensagem de sucesso
+    $message = "Arquivo CSV importado com sucesso.";
+    header("Location: cadastroSemestre.php?message=" . urlencode($message));
+    exit();
+} else {
+    // Nenhum arquivo CSV enviado
+    $message = "Nenhum arquivo CSV enviado.";
+    header("Location: cadastroSemestre.php?message=" . urlencode($message));
+    exit();
 }
-
-// Fecha as declarações preparadas
-$stmt->close();
-$stmtLogin->close();
-
-// Fecha a conexão com o banco de dados
-$conn->close();
 ?>

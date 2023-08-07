@@ -1,9 +1,9 @@
 <?php
 // Conexão com o banco de dados
-$servername = "localhost";
-$username = "danton_root";
-$password = "tcchorasmais";
-$dbname = "danton_tcc";
+$servername = "200.17.76.17";
+$username = "root";
+$password = "rootpassword";
+$dbname = "tcc";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -22,12 +22,14 @@ if (isset($_GET["id"])) {
 
     // Verifica se a exclusão foi bem-sucedida
     if ($conn->affected_rows > 0) {
-        echo "Arquivo excluído com sucesso.";
+        header("Location: pagInicialAluno.php");
+        exit();
     } else {
-        echo "Erro ao excluir o arquivo.";
+        header("Location: pagInicialAluno.php");
+        exit();
     }
 }
-header("Location: index.php");
+
 // Fecha a conexão com o banco de dados
 $conn->close();
 ?>

@@ -1,9 +1,10 @@
 <?php
+session_start();
 // Conecta ao banco de dados
-$servername = "localhost";
-$username = "danton_root";
-$password = "tcchorasmais";
-$dbname = "danton_tcc";
+$servername = "200.17.76.17";
+$username = "root";
+$password = "rootpassword";
+$dbname = "tcc";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -12,7 +13,6 @@ if ($conn->connect_error) {
 // Verifica se a matrícula e a senha foram enviadas pelo formulário
 if (isset($_POST["senha"])) {
     // Verifica se a senha atual está correta
-    session_start();
     $idAluno = $_SESSION["id"];
     $senhaAtual = $_POST["senha"];
 

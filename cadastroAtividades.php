@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE HTML>
 <html>
     <head>
@@ -25,7 +28,6 @@
     </head>
     <body>
         <?php
-            session_start();
 
             // Verifica se o usuário está logado
             if (!isset($_SESSION["id"])) {
@@ -34,10 +36,10 @@
             }
 
             // Conexão com o banco de dados
-            $servername = "localhost";
-            $username = "danton_root";
-            $password = "tcchorasmais";
-            $dbname = "danton_tcc";
+            $servername = "200.17.76.17";
+            $username = "root";
+            $password = "rootpassword";
+            $dbname = "tcc";
 
             $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -76,7 +78,7 @@
             <div class="navbar-right">
                 <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a href="index.php" class="nav-link">Página Inicial</a>
+                    <a href="pagInicialAluno.php" class="nav-link">Página Inicial</a>
                 </li>
                 <li class="nav-item">
                     <a href="perfil.php" class="nav-link"><?php echo $nomeAluno; ?></a>
@@ -89,7 +91,7 @@
         </nav>
         
         <div class="topo">
-            <a href="index.php" class="button voltar">Voltar</a>
+            <a href="pagInicialAluno.php" class="button voltar">Voltar</a>
             <h1 class="titulo">Cadastro de atividades complementares</h1>
         </div>
         <hr>

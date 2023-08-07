@@ -1,9 +1,9 @@
 <?php
 // Conecta ao banco de dados
-$servername = "localhost";
-$username = "danton_root";
-$password = "tcchorasmais";
-$dbname = "danton_tcc";
+$servername = "200.17.76.17";
+$username = "root";
+$password = "rootpassword";
+$dbname = "tcc";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -35,11 +35,11 @@ if (isset($_POST["matricula"]) && isset($_POST["senha"])) {
             header("Location: indexAdm.php"); // Redireciona para a página do administrador
             exit();
         } else {
-            header("Location: index.php"); // Redireciona para a página do usuário comum
+            header("Location: pagInicialAluno.php"); // Redireciona para a página do usuário comum
             exit();
         }
     } else {
-        header("Location: login.php?message=" . urlencode("Credenciais inválidas, tente novamente."));
+        header("Location: index.php?message=" . urlencode("Credenciais inválidas, tente novamente."));
     }
 }
 

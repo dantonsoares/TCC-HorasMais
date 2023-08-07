@@ -1,8 +1,8 @@
 <?php
-    $servername = "localhost";
-    $username = "danton_root";
-    $password = "tcchorasmais";
-    $dbname = "danton_tcc";
+    $servername = "200.17.76.17";
+    $username = "root";
+    $password = "rootpassword";
+    $dbname = "tcc";
 
     // Obtém o valor do ID da atividade enviado via POST
     $codigoArquivo = $_POST['codigoArquivo'];

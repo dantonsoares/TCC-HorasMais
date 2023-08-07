@@ -8,10 +8,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $conceito = $_POST["conceito"];
 
         // Conexão com o banco de dados
-        $servername = "localhost";
-        $username = "danton_root";
-        $password = "tcchorasmais";
-        $dbname = "danton_tcc";
+        $servername = "200.17.76.17";
+        $username = "root";
+        $password = "rootpassword";
+        $dbname = "tcc";
 
         $conn = new mysqli($servername, $username, $password, $dbname);
 

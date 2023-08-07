@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -9,17 +12,16 @@
 <body>
     <?php 
         // Conecta ao banco de dados
-        $servername = "localhost";
-        $username = "danton_root";
-        $password = "tcchorasmais";
-        $dbname = "danton_tcc";
+        $servername = "200.17.76.17";
+        $username = "root";
+        $password = "rootpassword";
+        $dbname = "tcc";
         $conn = new mysqli($servername, $username, $password, $dbname);
         if ($conn->connect_error) {
             die("Connection failed: " . $conn->connect_error);
         }
 
         // Busca o nome do aluno no banco de dados
-        session_start();
         $idAluno = $_SESSION["id"];
         $sql = "SELECT nome, matricula FROM tb_alunos_semestre WHERE IDAluno = $idAluno";
         $result = $conn->query($sql);
@@ -44,7 +46,7 @@
             <ul class="navbar-nav">
                 <li class="nav-item">
                 <?php if ($matriculaAluno != "10000"): ?>
-                    <a href="index.php" class="nav-link">Página Inicial</a>
+                    <a href="pagInicialAluno.php" class="nav-link">Página Inicial</a>
                 <?php else: ?>
                     <a href="indexAdm.php" class="nav-link">Página Inicial</a>
                 <?php endif; ?>
@@ -62,7 +64,7 @@
 
     <div class="topo">
         <?php if ($matriculaAluno != "10000"): ?>
-            <a href="index.php" class="button voltar">Voltar</a>
+            <a href="pagInicialAluno.php" class="button voltar">Voltar</a>
         <?php else: ?>
             <a href="indexAdm.php" class="button voltar">Voltar</a>
         <?php endif; ?>

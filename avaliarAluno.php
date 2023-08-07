@@ -1,3 +1,52 @@
+<?php
+    session_start();
+
+    // Verifica se o usuário está logado
+    if (!isset($_SESSION["id"])) {
+        // O usuário não está logado, redireciona para a página de login
+        header("Location: login.php");
+        exit();
+    }
+
+    // Verifica se o ID do aluno foi passado como parâmetro na URL
+    if (!isset($_GET["id"])) {
+        // ID do aluno não está presente, redireciona para a página anterior
+        //header("Location: indexAdm.php");
+        exit();
+    }
+
+    // Conexão com o banco de dados
+    $servername = "200.17.76.17";
+    $username = "root";
+    $password = "rootpassword";
+    $dbname = "tcc";
+
+    $conn = new mysqli($servername, $username, $password, $dbname);
+
+    // Verifica se houve erro na conexão
+    if ($conn->connect_error) {
+        die("Erro na conexão com o banco de dados: " . $conn->connect_error);
+    }
+
+    // Recupera o ID do aluno passado como parâmetro na URL
+    $alunoID = $_GET["id"];
+
+    // Obtém as informações do aluno com base no ID
+    $query = "SELECT * FROM tb_alunos_semestre WHERE IDAluno = '$alunoID'";
+    $result = $conn->query($query);
+
+    // Verifica se o aluno existe
+    if ($result->num_rows == 0) {
+        // Aluno não encontrado, redireciona para a página anterior
+        //header("Location: indexAdm.php");
+        exit();
+    }
+
+    // Obtém os dados do aluno
+    $aluno = $result->fetch_assoc();
+    $alunoNome = $aluno["nome"];
+?>
+
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -5,68 +54,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/avaliarAluno.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <?php
-        // Inicia a sessão do usuário
-        session_start();
-
-        // Verifica se o usuário está logado
-        if (!isset($_SESSION["id"])) {
-            // O usuário não está logado, redireciona para a página de login
-            header("Location: login.php");
-            exit();
-        }
-
-        // Verifica se o ID do aluno foi passado como parâmetro na URL
-        if (!isset($_GET["id"])) {
-            // ID do aluno não está presente, redireciona para a página anterior
-            header("Location: indexAdm.php");
-            exit();
-        }
-
-        if (isset($_SESSION["semestre"])) {
-            $semestre = $_SESSION["semestre"];
-        } else {
-            // Semestre não definido, redireciona de volta para a página 1
-            header("Location: listaAlunos.php");
-            exit();
-        }
-
-        // Conexão com o banco de dados
-        $servername = "localhost";
-        $username = "danton_root";
-        $password = "tcchorasmais";
-        $dbname = "danton_tcc";
-
-        $conn = new mysqli($servername, $username, $password, $dbname);
-
-        // Verifica se houve erro na conexão
-        if ($conn->connect_error) {
-            die("Erro na conexão com o banco de dados: " . $conn->connect_error);
-        }
-
-        // Recupera o ID do aluno passado como parâmetro na URL
-        $alunoID = $_GET["id"];
-
-        // Obtém as informações do aluno com base no ID
-        $query = "SELECT * FROM tb_alunos_semestre WHERE IDAluno = '$alunoID'";
-        $result = $conn->query($query);
-
-        // Verifica se o aluno existe
-        if ($result->num_rows == 0) {
-            // Aluno não encontrado, redireciona para a página anterior
-            header("Location: indexAdm.php");
-            exit();
-        }
-
-        // Obtém os dados do aluno
-        $aluno = $result->fetch_assoc();
-        $alunoNome = $aluno["nome"];
-
-        // Exibe as informações do aluno
-    ?>
     <nav class="navbar">
         <div class="navbar-left">
             <span class="navbar-brand">Horas+</span>
@@ -92,10 +81,11 @@
     </div>
 
     <hr>
-    <div class="tabela">
-    <h2><?php echo $aluno["matricula"]; ?> - <?php echo $alunoNome; ?></h2>
-    <h2>Atividades cadastradas:</h2>
-    <p>Suas alterações são salvas automaticamente.</p>
+
+    <div class='tabela'>
+        <h2><?php echo $aluno["matricula"]; ?> - <?php echo $alunoNome; ?></h2>
+        <h2>Atividades cadastradas:</h2>
+        <p>Suas alterações são salvas automaticamente.</p>
         <table>
             <tr>
                 <th>Codigo</th>
@@ -105,193 +95,119 @@
                 <th>Avaliação</th>
             </tr>
             <?php
-            // Obtém as atividades do aluno com base no ID
-            //$query = "SELECT * FROM tb_arquivos_importados JOIN tb_alunos_semestre WHERE IDAluno = '$alunoID' ORDER BY codigoArquivo";
-            $query = "SELECT *,( SELECT SUM(totalContabilizado) FROM tb_arquivos_importados WHERE codigoArquivo = t.codigoArquivo AND IDAluno = $alunoID) AS soma FROM tb_arquivos_importados t WHERE IDAluno = $alunoID ORDER BY codigoArquivo";
-            $result = $conn->query($query);
+                // Obtém as atividades do aluno com base no ID
+                $query = "SELECT t.*, a.maximoAtividade, a.maximoLimite, (SELECT SUM(totalContabilizado) FROM tb_arquivos_importados WHERE codigoArquivo = t.codigoArquivo AND IDAluno = $alunoID AND statusArquivo = 'Aprovado') AS soma FROM tb_arquivos_importados t JOIN tb_atividades a ON t.codigoArquivo = a.codigo WHERE IDAluno = '$alunoID' ORDER BY t.codigoArquivo ASC";
+                $result = $conn->query($query);
+                
+                if ($result->num_rows > 0) {
+                    $somas = array(); // Array para armazenar os códigos de arquivo e suas somas correspondentes
+                    while ($row = $result->fetch_assoc()) {
+                        // Armazena o código de arquivo e sua soma no array somas
+                        $codigoArquivo = $row["codigoArquivo"];
+                        $soma = $row["soma"];
+                        $somas[$codigoArquivo] = $soma;
+                
+                        // Exibe a primeira tabela com as atividades
+                        echo "<tr>";
+                        echo "<td>" . $row["codigoArquivo"] . "</td>";
+                        echo "<td><a href='downloadAtividadeAluno.php?id=" . $row["ID"] . "'>" . $row["nomeArquivo"] . "</a></td>";
+                        echo "<td>" . $row["cargaHoraria"] . "</td>";
+                        echo "<td>";
+                        echo "<form method='POST' action='atualizarAvaliacao.php?id=" . $row["IDAluno"] . "'>";
 
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $atividadeID = $row["ID"];
-                    $totalContabilizado = $row["totalContabilizado"];
-                    $statusArquivo = $row["statusArquivo"];
-                    $codigoArquivo = $row["codigoArquivo"];
-                    $soma = $row["soma"];
-
+                        if($row["totalContabilizado"] == 0){
+                            echo "<input type='number' oninput='validarValor(this)' onchange='editarAvaliacao(this.form)' name='digitado' value='" . $row["cargaHoraria"] . "' step='1'>";
+                        }else{
+                            echo "<input type='number' oninput='validarValor(this)' onchange='editarAvaliacao(this.form)' name='digitado' value='" . $row["totalContabilizado"] . "' step='1'>";
+                        }
+                        echo "</td>";
+                        echo "<td>";
+                        echo "<label class='radio-label'><input type='radio' name='avaliacao' value='Aprovado' " . ($row["statusArquivo"] == "Aprovado" ? "checked" : "") . " onclick='atualizarAvaliacao(this.form)'> Aprovado</label>";
+                        echo "<label class='radio-label'><input type='radio' name='avaliacao' value='Reprovado' " . ($row["statusArquivo"] == "Reprovado" ? "checked" : "") . " onclick='atualizarAvaliacao(this.form)'> Reprovado</label>";
+                        echo "<label class='radio-label'><input type='radio' name='avaliacao' value='Pendente' " . ($row["statusArquivo"] == "Pendente" ? "checked" : "") . " onclick='atualizarAvaliacao(this.form)'> Pendente</label>";
+                        echo "<input type='hidden' name='atividadeID' value='" . $row["ID"] . "'>";
+                        echo "<input type='hidden' name='soma' value='" . $row["soma"] . "'>";
+                        echo "<input type='hidden' name='maximoAtividade' value='" . $row["maximoAtividade"] . "'>";
+                        echo "<input type='hidden' name='maximoLimite' value='" . $row["maximoLimite"] . "'>";
+                        echo "<input type='hidden' name='totalContabilizado' value='" . $row["totalContabilizado"] . "'>";
+                        echo "</form>";
+                        echo "</td>";
+                        echo "</tr>";
+                    }
+                
+                    echo "</table>";
+                    echo "<table>";
+                    echo "<h2>Horas aprovadas por categoria:</h2>";
                     echo "<tr>";
-                    echo "<td>" . $row["codigoArquivo"] . "</td>";
-                    echo "<td><a href='downloadAtividadeAluno.php?id=$atividadeID'>" . $row["nomeArquivo"] . "</a></td>";
-                    echo "<td>" . $row["cargaHoraria"] . "</td>";
-                    echo "<td><input type='text' class='total-contabilizado' data-id='$codigoArquivo' data-atividadeid='$atividadeID' value='$totalContabilizado' data-soma='$soma'></td>";
-                    echo "<td>";
-                    echo "<select class='status' data-id='$atividadeID'>";
-                    echo "<option value='Aprovado'" . ($statusArquivo == 'Aprovado' ? 'selected' : '') . ">Aprovado</option>";
-                    echo "<option value='Reprovado'" . ($statusArquivo == 'Reprovado' ? 'selected' : '') . ">Reprovado</option>";
-                    echo "<option value='Pendente'" . ($statusArquivo == 'Pendente' ? 'selected' : '') . ">Pendente</option>";
-                    echo "</select>";
-                    echo "</td>";
+                    echo "<th>Codigo</th>";
+                    echo "<th>Horas Aprovadas</th>";
                     echo "</tr>";
-                }
-            }else {
-                echo "<tr><td colspan='5'>Nenhuma atividade cadastrada.</td></tr>";
-            }
+
+                    $totalHorasAprovadas = 0; // Variável para armazenar a soma total das horas aprovadas
+
+                    foreach ($somas as $codigoArquivo => $soma) {
+                        if ($soma == '') {
+                            $soma = 0;
+                        }
+                        echo "<tr>";
+                        echo "<td>" . $codigoArquivo . "</td>";
+                        echo "<td>" . $soma . "</td>";
+                        echo "</tr>";
+
+                        $totalHorasAprovadas += $soma; // Adiciona a soma atual à soma total
+                    }
+
+                    // Adiciona a última linha da tabela com o total de horas aprovadas
+                    echo "<tr>";
+                    echo "<td><strong>Total de horas aprovadas:</strong></td>";
+                    echo "<td><strong>" . $totalHorasAprovadas . "</strong></td>";
+                    echo "</tr>";
+
+                    echo "</table>";
+
+                    // Atualiza a coluna horasAprovadas na tabela tb_alunos_semestre
+                    //$updateQuery = "UPDATE tb_alunos_semestre SET horasAprovadas = $totalHorasAprovadas WHERE IDAluno = $alunoID";
+                    $updateQuery = "UPDATE tb_alunos_semestre SET horasAprovadas = $totalHorasAprovadas,conceito = (CASE WHEN horasAprovadas >= '210' THEN 'S' ELSE 'Q' END) WHERE IDAluno = $alunoID";
+                    $conn->query($updateQuery);
+                }           
             ?>
         </table>
     </div>
 
-    <div class="tabela">
-        <h2>Atividades aprovadas por categoria</h2>
-        <table id="atividades-aprovadas">
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Total Carga Horária</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-
     <script>
-    $(document).ready(function() {
-        // Evento de alteração do campo "Total Contabilizado"
-        $(".total-contabilizado").change(function() {
-            var codigoArquivo = $(this).data("id");
-            var totalContabilizado = $(this).val();
-            var atividadeID = $(this).data("atividadeid");
-            var soma = $(this).data('soma');
-            // Chamar a função para atualizar o total contabilizado
-            atualizarTotalContabilizado(codigoArquivo, totalContabilizado, atividadeID,soma);
-        });
+        function atualizarAvaliacao(form) {
+            var digitado = form.digitado.value.trim();
+            digitado = digitado === '' ? 0 : parseInt(digitado);
+            var maximoAtividade = parseInt(form.maximoAtividade.value);
+            var maximoLimite = parseInt(form.maximoLimite.value);
+            var soma = parseInt(form.soma.value);
+            var totalContabilizado = parseInt(form.totalContabilizado.value);
+            var soma2 = soma + digitado - totalContabilizado;
 
-        // Atualizar o status via AJAX
-        $(".status").change(function() {
-                var atividadeID = $(this).data("id");
-                var status = $(this).val();
-
-                $.ajax({
-                    url: "atualizarStatus.php",
-                    method: "POST",
-                    data: { atividadeID: atividadeID, status: status },
-                    success: function(response) {
-                        console.log(response);
-                        // Exibir mensagem de sucesso ou atualizar a tabela, se necessário
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                        // Exibir mensagem de erro, se necessário
-                    }
-                });
-        });
-
-        // Função para atualizar o total contabilizado
-        function atualizarTotalContabilizado(codigoArquivo, totalContabilizado, atividadeID,soma) {
-            // Realiza a requisição AJAX
-            $.ajax({
-                url: "buscarMaximoAtividade.php",
-                method: "POST",
-                data: {
-                    codigoArquivo: codigoArquivo
-                },
-                success: function(response) {
-                    alert(response);
-                    var values = response.split(",");
-                    var maximoAtividade = parseInt(values[0]);
-                    var maximoLimite = parseInt(values[1]);
-                    alert("maximoAtividade"+maximoAtividade);
-                    alert("maximoLimite"+maximoLimite);
-                    if (!isNaN(maximoAtividade)) {
-                        soma = parseInt(soma) + parseInt(totalContabilizado);
-                        alert("soma"+soma);
-                        if(totalContabilizado > maximoAtividade || soma > maximoLimite){
-                            alert("O valor máximo para essa atividade é de: " + Math.abs(soma - maximoAtividade - totalContabilizado));
-                            location.reload();
-                        }
-                        else{
-                            $.ajax({
-                                url: "atualizarTotalContabilizado.php",
-                                method: "POST",
-                                data: {
-                                    codigoArquivo: codigoArquivo,
-                                    totalContabilizado: totalContabilizado,
-                                    atividadeID: atividadeID
-                                },
-                                success: function(response) {
-                                    location.reload();
-                                    // Trata a resposta da requisição
-                                    if (response === "success") {
-                                        // Total contabilizado atualizado com sucesso
-                                        console.log("Total contabilizado atualizado para a atividade " + codigoArquivo);
-                                    } else {
-                                        // Erro ao atualizar o total contabilizado
-                                        console.log("Erro ao atualizar o total contabilizado para a atividade " + codigoArquivo);
-                                    }
-                                }
-                            });
-                        }
-                    } else {
-                        // O valor máximo não pôde ser obtido
-                        console.log("Erro ao buscar o valor máximo para a atividade " + codigoArquivo);
-                    }
-                }
-            });
-        }
-    });
-</script>
-
-
-    <script>
-        // Função para atualizar a tabela com os dados recebidos
-        function atualizarTabela(atividades) {
-            var tbody = document.getElementById("atividades-aprovadas").getElementsByTagName("tbody")[0];
-            tbody.innerHTML = "";
-
-            if (atividades.length > 0) {
-                for (var i = 0; i < atividades.length; i++) {
-                    var atividade = atividades[i];
-
-                    var row = document.createElement("tr");
-                    var codigoCell = document.createElement("td");
-                    var cargaHorariaCell = document.createElement("td");
-
-                    codigoCell.textContent = atividade.codigoArquivo;
-                    cargaHorariaCell.textContent = atividade.totalCargaHoraria;
-
-                    row.appendChild(codigoCell);
-                    row.appendChild(cargaHorariaCell);
-
-                    tbody.appendChild(row);
-                }
-            } else {
-                var row = document.createElement("tr");
-                var messageCell = document.createElement("td");
-                messageCell.setAttribute("colspan", "2");
-                messageCell.textContent = "Nenhuma atividade aprovada por categoria.";
-
-                row.appendChild(messageCell);
-                tbody.appendChild(row);
+            if (soma2 > maximoLimite) {
+                alert("O Valor máximo para essa atividade é de: " + (maximoLimite - soma + totalContabilizado));
+                location.reload();
+            } else if(digitado > maximoAtividade) {
+                alert("O Valor máximo para essa atividade é de: " + maximoAtividade);
+                location.reload();
+            } else{
+                form.submit();
             }
         }
 
-        // Função para fazer a requisição AJAX e atualizar a tabela
-        function atualizarTabelaAutomaticamente() {
-            var alunoID = "<?php echo $alunoID; ?>";
-
-            var xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState === 4 && this.status === 200) {
-                    var atividades = JSON.parse(this.responseText);
-                    atualizarTabela(atividades);
-                }
-            };
-            xhttp.open("GET", "obterAtividadesAprovadas.php?id=" + alunoID, true);
-            xhttp.send();
+        function validarValor(input) {
+            if (parseFloat(input.value) < 0) {
+                input.value = 0;
+            }
         }
 
-        // Chama a função de atualização inicialmente e a cada 1 segundos
-        atualizarTabelaAutomaticamente();
+        function editarAvaliacao(form) {
+            if (form.avaliacao.value === "Aprovado") {
+                atualizarAvaliacao(form);
+            }
+        }
     </script>
+
 
 </body>
 </html>

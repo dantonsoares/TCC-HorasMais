@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <DOCTYPE HTML>
 <html>
     <head>
@@ -8,21 +11,20 @@
     </head>
     <body>
         <?php
-            // Inicia a sessão do usuário
-            session_start();
+           
 
             // Verifica se o usuário está logado
             if (!isset($_SESSION["id"])) {
                 // O usuário não está logado, redireciona para a página de login
-                header("Location: login.php");
+                header("Location: index.php");
                 exit();
             }
 
             // Conexão com o banco de dados
-            $servername = "localhost";
-            $username = "danton_root";
-            $password = "tcchorasmais";
-            $dbname = "danton_tcc";
+            $servername = "200.17.76.17";
+            $username = "root";
+            $password = "rootpassword";
+            $dbname = "tcc";
 
             $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -75,7 +77,7 @@
                 <option value="">Semestre</option>
                 <?php
                 // Recupera os semestres disponíveis do banco de dados
-                $query_semestres = "SELECT DISTINCT semestre FROM tb_alunos_semestre";
+                $query_semestres = "SELECT DISTINCT semestre FROM tb_alunos_semestre WHERE semestre != '' ORDER BY semestre DESC";
                 $result_semestres = $conn->query($query_semestres);
 
                 // Exibe as opções do dropdown com base nos semestres encontrados

@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -8,8 +11,6 @@
 </head>
 <body>
     <?php
-        // Inicia a sessão do usuário
-        session_start();
 
         // Verifica se o usuário está logado
         if (!isset($_SESSION["id"])) {
@@ -19,10 +20,10 @@
         }
 
         // Conexão com o banco de dados
-        $servername = "localhost";
-        $username = "danton_root";
-        $password = "tcchorasmais";
-        $dbname = "danton_tcc";
+        $servername = "200.17.76.17";
+        $username = "root";
+        $password = "rootpassword";
+        $dbname = "tcc";
 
         $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -100,6 +101,7 @@
             <th>Matrícula</th>
             <th>Nome</th>
             <th>Status</th>
+            <th>Horas Aprovadas</th>
             <th>Conceito</th>
         </tr>
         <?php
@@ -109,6 +111,7 @@
                     echo "<td>" . $row["matricula"] . "</td>";
                     echo "<td><a href='avaliarAluno.php?id=" . $row["IDAluno"] . "'>" . $row["nome"] . "</a></td>";
                     echo "<td>" . $row["status"] . "</td>";
+                    echo "<td>" . $row["horasAprovadas"] . "</td>";
                     echo "<td>";
                     echo "<select name='conceito' onchange='atualizarConceito(" . $row["IDAluno"] . ", this.value)'>";
                     echo "<option value='Q' " . ($row['conceito'] == 'Q' ? 'selected' : '') . ">Q</option>";

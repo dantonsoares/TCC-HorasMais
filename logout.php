@@ -1,5 +1,4 @@
 <?php
-    // Inicia a sessão do usuário
     session_start();
 
     // Destroi todas as variáveis de sessão
@@ -9,6 +8,6 @@
     session_destroy();
 
     // Redireciona o usuário para a página de login
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 ?>
